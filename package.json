@@ -5,14 +5,44 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "@substrate-system/bencode": "^2.0.0"
+    "@substrate-system/bencode": "^4.1.11",
+    "@substrate-system/is-ip": "^0.0.3",
+    "events": "^3.3.0",
+    "util": "^0.12.5"
   },
   "devDependencies": {
-    "standard": "*",
-    "tape": "^4.4.0"
+    "@substrate-system/tapzero": "^0.10.5",
+    "@types/events": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "auto-changelog": "^2.4.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "markdown-toc": "^1.2.0",
+    "tap-spec": "^5.0.0",
+    "tape-run": "^11.0.0",
+    "typedoc": "^0.27.0",
+    "typescript": "^5.4.5"
   },
   "scripts": {
-    "test": "standard && tape test.js"
+    "lint": "eslint \"./**/*.{ts,js}\"",
+    "build-tests": "esbuild test/index.ts --target=es2020 --bundle --keep-names > test/test-bundle.js",
+    "test": "npm run lint && npm run build && npm run build-tests && npm run test-tape-run",
+    "test-tape-run": "cat test/index.html | tape-run --input=html --static=test | tap-spec",
+    "build-cjs": "esbuild src/*.ts --format=cjs --keep-names --tsconfig=tsconfig.build.json --outdir=./dist --out-extension:.js=.cjs --sourcemap",
+    "build-cjs:min": "esbuild src/*.ts --format=cjs --minify --keep-names --tsconfig=tsconfig.build.json --outdir=./dist --out-extension:.js=.min.cjs --sourcemap",
+    "build-esm": "esbuild src/*.ts --format=esm --metafile=dist/meta.json --keep-names --tsconfig=tsconfig.build.json --outdir=./dist --sourcemap && tsc --emitDeclarationOnly --project tsconfig.build.json --outDir dist",
+    "build-esm:min": "esbuild ./src/*.ts --format=esm --keep-names --bundle --tsconfig=tsconfig.build.json --minify --out-extension:.js=.min.js --outdir=./dist --sourcemap",
+    "build-example": "mkdir -p ./public && rm -rf ./public/* && VITE_DEBUG_MODE=staging vite --mode staging --base=\"/repo-name\" build",
+    "build-docs": "typedoc ./src/index.ts",
+    "build": "mkdir -p ./dist && rm -rf ./dist/* && npm run build-cjs && npm run build-esm && npm run build-esm:min && npm run build-cjs:min",
+    "start": "vite",
+    "toc": "markdown-toc --maxdepth 3 -i README.md",
+    "preversion": "npm run lint",
+    "version": "npm run toc && auto-changelog -p --template keepachangelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md README.md",
+    "postversion": "git push --follow-tags && npm publish",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
